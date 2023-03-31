@@ -1,7 +1,7 @@
 package com.madas.cs556.services.authorizationServices.constants;
 
 public enum StatusCode {
-    SUCCESS(200, "Sucess!"),
+    SUCCESS(200, "Success!"),
     NOT_AN_ADMIN(100, "User trying to delegate access is not an admin!"),
     ADMIN_ACCESS_NOT_ASSIGNED(101, "Trying to remove credentials for a User who doesn't have admin rights!"),
     DELEGATION_NOT_PROVIDED_BEFORE(102, "From User has not given delegation access to user before!"),

@@ -17,8 +17,9 @@ public class ObjectPermission {
         this.mapping = new HashMap<>();
     }
 
-    public void addTable(String name, List<Integer> owners) {
-        Table table = new Table(name, owners, true);
+    public void addTable(String name, List<Integer> owners, boolean isOwnershipReq) {
+
+        Table table = new Table(name, owners, isOwnershipReq);
         mapping.put(name, table);
     }
 

@@ -12,9 +12,18 @@ public class AuthorizationService {
     @Autowired
     ObjectPermission tables;
 
-    public void createTable(String name, List<Integer> owners) {
-        tables.addTable(name, owners);
+    public void createTable(String name, List<Integer> owners, boolean isOwnershipReq) {
+        tables.addTable(name, owners, isOwnershipReq);
     }
+
+    public String printAcceptanceStatus(String name) {
+        return tables.getTable(name).printAcceptance();
+    }
+
+    public String acceptOwnership(String tableName, Integer to) {
+        return tables.getTable(tableName).acceptOwnership(to).getDescription();
+    }
+
 
     public String printAdmins(String name) {
         return tables.getTable(name).printAdmins();

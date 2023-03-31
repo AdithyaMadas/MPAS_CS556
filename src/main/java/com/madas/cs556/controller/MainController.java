@@ -27,8 +27,13 @@ public class MainController {
 
     @PostMapping(path = "/createTable")
     public @ResponseBody String createTable(@RequestBody CreateTableRequest createTableRequest) {
-        service.createTable(createTableRequest.getTableName(), createTableRequest.getOwners());
+        service.createTable(createTableRequest.getTableName(), createTableRequest.getOwners(), createTableRequest.isOwnershipReq());
         return "Success!";
+    }
+
+    @GetMapping(path = "/printAcceptanceStatus/{tableName}")
+    public @ResponseBody String printAcceptanceStatus(@PathVariable String tableName) {
+        return service.printAcceptanceStatus(tableName);
     }
 
 
@@ -57,28 +62,34 @@ public class MainController {
         return service.removeDelegation(request.tableName, request.from, request.to);
     }
 
-//    @GetMapping(path = "/test")
-//    @ResponseBody
-//    public AuthorizationRequest sample() {
-//        AuthorizationRequest request = new AuthorizationRequest();
-//        request.setFrom(1);
-//        request.setTo(2);
-//        request.setTableName("madas");
-//        return request;
-//    }
-//
-//    @GetMapping(path = "/test2")
-//    @ResponseBody
-//    public CreateTableRequest createTableRequest() {
-//        CreateTableRequest request = new CreateTableRequest();
-//        request.setTableName("madas");
-//        ArrayList<Integer> arrayList = new ArrayList<>();
-//        arrayList.add(1);
-//        arrayList.add(2);
-//        request.setOwners(arrayList);
-//        request.setTableName("madas");
-//        return request;
-//    }
+    @GetMapping(path = "/acceptOwnership/{table}/{to}")
+    public @ResponseBody String acceptOwnership(@PathVariable("table") String tableName, @PathVariable("to") Integer to) {
+        return service.acceptOwnership(tableName, to);
+    }
+
+    @GetMapping(path = "/test")
+    @ResponseBody
+    public AuthorizationRequest sample() {
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setFrom(1);
+        request.setTo(2);
+        request.setTableName("madas");
+        return request;
+    }
+
+    @GetMapping(path = "/test2")
+    @ResponseBody
+    public CreateTableRequest createTableRequest() {
+        CreateTableRequest request = new CreateTableRequest();
+        request.setTableName("madas");
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        arrayList.add(1);
+        arrayList.add(2);
+        request.setOwners(arrayList);
+        request.setTableName("madas");
+        request.setOwnershipReq(true);
+        return request;
+    }
 
 
 }

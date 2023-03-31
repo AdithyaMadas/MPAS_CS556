@@ -33,6 +33,7 @@ public class Table {
             uidAdminMap.put(o, admin);
 //            adminDelegations.add(admin);
         }
+        this.stillToAcceptOwnership = new HashMap<>();
         this.isOwnershipAcceptanceReq = isOwnershipAcceptanceReq;
     }
 
@@ -77,22 +78,33 @@ public class Table {
 
     public StatusCode transferOwnership(Integer from, Integer to, TransferMode mode) {
         if (isOwnershipAcceptanceReq) {
-            stillToAcceptOwnership.computeIfAbsent(from, v -> new ArrayList<>()).add(new TransferRequest(from, to, mode));
+            stillToAcceptOwnership.computeIfAbsent(to, v -> new ArrayList<>()).add(new TransferRequest(from, to, mode));
             return StatusCode.SUCCESS;
         } else {
             return transferOwnershipImpl(from, to, mode);
         }
     }
 
+    //if the from is not an owner anymore, then it is just ignored.
     public StatusCode acceptOwnership(Integer to) {
         if (isOwnershipAcceptanceReq) {
             List<TransferRequest> transferRequests = stillToAcceptOwnership.get(to);
             if (transferRequests == null) {
                 return StatusCode.NO_ONE_ASSIGNED_OWNERSHIP;
             }
+            boolean isNewOwner = false;
             for (TransferRequest request : transferRequests) {
-
+                if (uidAdminMap.containsKey(request.getFrom())) {
+                    isNewOwner = true;
+                    transferOwnershipImpl(request.getFrom(), request.getTo(), request.getRequestType());
+                }
             }
+
+            if (isNewOwner) {
+                uidAdminMap.get(to).setIsOwner(true);
+            }
+            stillToAcceptOwnership.remove(to);
+            return StatusCode.SUCCESS;
         } else {
             return StatusCode.MODE_NOT_SUPPORTED;
         }
@@ -134,7 +146,7 @@ public class Table {
             if (!toOwner.containsDelegate(admin)) {
                 toOwner.transferDelegates(admin);
             } else {
-                admin.reduceDelegateCount();
+//                admin.reduceDelegateCount();
             }
         }
     }
@@ -147,6 +159,10 @@ public class Table {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    public String printAcceptance() {
+        return stillToAcceptOwnership.toString();
     }
 
 }
