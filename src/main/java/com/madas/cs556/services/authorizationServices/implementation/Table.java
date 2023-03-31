@@ -57,7 +57,9 @@ public class Table {
                 if (fromAdmin.containsDelegate(toAdmin)) {
                     fromAdmin.removeDelegate(toAdmin);
                     for (Admins delegates : toAdmin.getDelegateTo()) {
-                        removeDelegation(toAdmin.getUid(), delegates.getUid());
+                        if (!toAdmin.getIsOwner()) {
+                            removeDelegation(toAdmin.getUid(), delegates.getUid());
+                        }
                     }
                     if (toAdmin.getDelegatedBy() <= 0 && !toAdmin.getIsOwner()) {
                         logger.info("User " + to + " is not an admin anymore");
@@ -143,10 +145,10 @@ public class Table {
 
     private void transferPreviousDelegations(List<Admins> delegateTo, Admins toOwner) {
         for (Admins admin : delegateTo) {
-            if (!toOwner.containsDelegate(admin)) {
+            if (!toOwner.containsDelegate(admin) && !admin.getUid().equals(toOwner.getUid())) {
                 toOwner.transferDelegates(admin);
             } else {
-//                admin.reduceDelegateCount();
+                admin.reduceDelegateCount();
             }
         }
     }
