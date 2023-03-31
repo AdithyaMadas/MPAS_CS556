@@ -1,15 +1,12 @@
 package com.madas.cs556.services.authorizationServices.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Admins {
     private Integer uid;
     private final Set<Admins> delegateTo;
 
-    private Integer delegatedBy;
+    private HashMap<Integer, Integer> delegatedByOwners;
 
     boolean isOwner;
 
@@ -17,7 +14,7 @@ public class Admins {
     public Admins(int i) {
         uid = i;
         delegateTo = new HashSet<>();
-        delegatedBy = 0;
+        delegatedByOwners = new HashMap<>();
     }
 
     public List<Admins> getDelegateTo() {
@@ -28,23 +25,32 @@ public class Admins {
         if (containsDelegate(to)) {
             return;
         }
-        to.delegatedBy++;
+        Set<Admins> visitedAdmins = new HashSet<>();
+        visitedAdmins.add(this);
+        to.addDelegation(this, visitedAdmins);
         delegateTo.add(to);
+    }
+
+    public void addDelegation(Admins from, Set<Admins> visited) {
+        if (visited.contains(this)) {
+            return;
+        }
+        visited.add(this);
+        for (Integer owner : from.delegatedByOwners.keySet()) {
+            Integer prevCount = delegatedByOwners.getOrDefault(owner, 0);
+            delegatedByOwners.put(owner, prevCount + from.delegatedByOwners.get(owner));
+        }
+        for (Admins delegatedTo : delegateTo) {
+            delegatedTo.addDelegation(this, visited);
+        }
     }
 
     public void transferDelegates(Admins to) {
         delegateTo.add(to);
     }
 
-    public void reduceDelegateCount() {
-        delegatedBy--;
-    }
-
     public boolean containsDelegate(Admins to) {
         return delegateTo.contains(to);
-    }
-    public Integer getDelegatedBy() {
-        return delegatedBy;
     }
 
     public Integer getUid() {
@@ -61,11 +67,28 @@ public class Admins {
 
     public void setIsOwner(boolean isOwner) {
         this.isOwner = isOwner;
+        delegatedByOwners.put(uid, 1);
     }
 
     public void removeDelegate(Admins toAdmin) {
         delegateTo.remove(toAdmin);
-        toAdmin.delegatedBy--;
+        toAdmin.removeOwners(this.delegatedByOwners);
+    }
+
+    public void removeOwners(HashMap<Integer, Integer> fromOwners) {
+        for (Integer owner : fromOwners.keySet()) {
+            Integer prevCount = delegatedByOwners.get(owner);
+            Integer newCount = prevCount - fromOwners.get(owner);
+            if (newCount <= 0) {
+                delegatedByOwners.remove(owner);
+            } else {
+                delegatedByOwners.put(owner, newCount);
+            }
+        }
+    }
+
+    public int getDelegatedBy() {
+        return delegatedByOwners.size();
     }
 
     @Override
@@ -78,8 +101,9 @@ public class Admins {
         return "Admins{" +
                 "uid=" + uid +
                 ", delegateTo=[" + sb +
-                "], delegatedBy=" + delegatedBy +
+                "], delegatedByOwners=" + delegatedByOwners +
                 ", isOwner=" + isOwner +
                 '}';
     }
+
 }

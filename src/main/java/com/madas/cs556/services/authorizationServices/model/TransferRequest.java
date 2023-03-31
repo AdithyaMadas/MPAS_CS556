@@ -36,4 +36,13 @@ public class TransferRequest {
     public void setRequestType(TransferMode requestType) {
         this.requestType = requestType;
     }
+
+    @Override
+    public String toString() {
+        return "TransferRequest{" +
+                "from=" + from +
+                ", to=" + to +
+                ", requestType=" + requestType +
+                '}';
+    }
 }

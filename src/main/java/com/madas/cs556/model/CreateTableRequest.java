@@ -7,6 +7,16 @@ public class CreateTableRequest {
 
     List<Integer> owners;
 
+    boolean isOwnershipReq;
+
+    public boolean isOwnershipReq() {
+        return isOwnershipReq;
+    }
+
+    public void setOwnershipReq(boolean ownershipReq) {
+        isOwnershipReq = ownershipReq;
+    }
+
     public String getTableName() {
         return tableName;
     }
