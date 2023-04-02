@@ -148,7 +148,7 @@ public class Table {
             if (!toOwner.containsDelegate(admin) && !admin.getUid().equals(toOwner.getUid())) {
                 toOwner.transferDelegates(admin);
             } else {
-                admin.reduceDelegateCount();
+//                admin.reduceDelegateCount();
             }
         }
     }
