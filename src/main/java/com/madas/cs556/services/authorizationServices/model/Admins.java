@@ -1,9 +1,6 @@
 package com.madas.cs556.services.authorizationServices.model;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Admins {
     private Integer uid;
@@ -13,11 +10,55 @@ public class Admins {
 
     boolean isOwner;
 
+    Map<Integer, Integer> ownerRelation;
+
 
     public Admins(int i) {
         uid = i;
         delegateTo = new HashSet<>();
         delegatedBy = 0;
+        ownerRelation = new HashMap<>();
+    }
+
+    public Map<Integer, Integer> getOwnerRelation() {
+        return ownerRelation;
+    }
+
+    public void addOwner(Map<Integer, Integer> owners) {
+        for (Map.Entry<Integer, Integer> entry : owners.entrySet()) {
+            Integer owner = entry.getKey();
+            Integer ownerCount = this.ownerRelation.getOrDefault(owner, 0) + entry.getValue();
+            ownerRelation.put(owner, ownerCount);
+        }
+    }
+
+    public void addOwner(Integer owner) {
+        ownerRelation.put(owner, 1);
+    }
+
+    public void removeOwner(Map<Integer, Integer> owners) {
+        for (Map.Entry<Integer, Integer> entry : owners.entrySet()) {
+            Integer owner = entry.getKey();
+            Integer ownerCount = this.ownerRelation.get(owner) - entry.getValue();
+            if (ownerCount == 0) {
+                ownerRelation.remove(owner);
+            } else {
+                ownerRelation.put(owner, ownerCount);
+            }
+        }
+    }
+
+    public void replaceOwner(Integer from, Integer to) {
+        Integer ownerCount = this.ownerRelation.get(from);
+        if (ownerCount == null) {
+            return;
+        }
+        this.ownerRelation.remove(from);
+        this.ownerRelation.put(to, ownerCount);
+    }
+
+    public List<Integer> getOwnerList() {
+        return new ArrayList<>(ownerRelation.keySet());
     }
 
     public List<Admins> getDelegateTo() {
@@ -80,6 +121,7 @@ public class Admins {
                 ", delegateTo=[" + sb +
                 "], delegatedBy=" + delegatedBy +
                 ", isOwner=" + isOwner +
+                ", ownerRelation=" + ownerRelation +
                 '}';
     }
 }

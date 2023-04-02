@@ -10,6 +10,8 @@ public enum StatusCode {
     MODE_NOT_SUPPORTED(104, "Mode not supported"),
 
     NO_ONE_ASSIGNED_OWNERSHIP(105, "No one assigned ownership!"),
+
+    TRYING_TO_DELEGATE_ITSELF(106, "User trying to delegate themselves")
     ;
 
     private final int code;

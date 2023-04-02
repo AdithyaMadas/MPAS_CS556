@@ -22,15 +22,20 @@ public class Table {
     Map<Integer, Admins> uidAdminMap;
     Map<Integer, List<TransferRequest>> stillToAcceptOwnership;
 
+    Set<Integer> owners;
+
     public boolean isOwnershipAcceptanceReq;
     public Table(String name, List<Integer> owners, boolean isOwnershipAcceptanceReq) {
         this.tableName = name;
 //        adminDelegations = new HashSet<>();
         uidAdminMap = new HashMap<>();
+        this.owners = new HashSet<>();
         for (int o : owners) {
             Admins admin = new Admins(o);
             admin.setIsOwner(true);
             uidAdminMap.put(o, admin);
+            admin.addOwner(o);
+            this.owners.add(o);
 //            adminDelegations.add(admin);
         }
         this.stillToAcceptOwnership = new HashMap<>();
@@ -38,11 +43,18 @@ public class Table {
     }
 
     public StatusCode delegateFromTo(Integer from, Integer to) {
+        if (from.equals(to)) {
+            return StatusCode.TRYING_TO_DELEGATE_ITSELF;
+        }
         if (uidAdminMap.containsKey(from)) {
             Admins fromAdmin = uidAdminMap.get(from);
             Admins toAdmin = uidAdminMap.getOrDefault(to, new Admins(to));
             uidAdminMap.put(to, toAdmin);
             fromAdmin.addToDelegates(toAdmin);
+            updateOwnersForChildren(toAdmin, fromAdmin.getOwnerRelation());
+            for (int owner : fromAdmin.getOwnerList()) {
+                toAdmin.addOwner(owner);
+            }
             return StatusCode.SUCCESS;
         } else {
             return StatusCode.NOT_AN_ADMIN;
@@ -55,16 +67,17 @@ public class Table {
                 Admins fromAdmin = uidAdminMap.get(from);
                 Admins toAdmin = uidAdminMap.get(to);
                 if (fromAdmin.containsDelegate(toAdmin)) {
+                    removeDelegation(toAdmin, fromAdmin.getOwnerRelation());
                     fromAdmin.removeDelegate(toAdmin);
-                    for (Admins delegates : toAdmin.getDelegateTo()) {
-                        if (!toAdmin.getIsOwner()) {
-                            removeDelegation(toAdmin.getUid(), delegates.getUid());
-                        }
-                    }
-                    if (toAdmin.getDelegatedBy() <= 0 && !toAdmin.getIsOwner()) {
-                        logger.info("User " + to + " is not an admin anymore");
-                        uidAdminMap.remove(to);
-                    }
+//                    for (Admins delegates : toAdmin.getDelegateTo()) {
+////                        if (!toAdmin.getIsOwner()) {
+//                            removeDelegation(toAdmin.getUid(), delegates.getUid());
+////                        }
+//                    }
+//                    if (toAdmin.getDelegatedBy() <= 0 && !toAdmin.getIsOwner()) {
+//                        logger.info("User " + to + " is not an admin anymore");
+//                        uidAdminMap.remove(to);
+//                    }
                     return StatusCode.SUCCESS;
                 } else {
                     return StatusCode.DELEGATION_NOT_PROVIDED_BEFORE;
@@ -74,6 +87,24 @@ public class Table {
             }
         } else {
             return StatusCode.NOT_AN_ADMIN;
+        }
+    }
+
+    private void removeDelegation(Admins to, Map<Integer, Integer> ownerRelation) {
+        for (Admins i : to.getDelegateTo()) {
+            removeDelegation(i, ownerRelation);
+        }
+        to.removeOwner(ownerRelation);
+        if (to.getOwnerRelation().size() == 0) {
+            logger.info("User " + to + " is not an admin anymore");
+            uidAdminMap.remove(to.getUid());
+        }
+    }
+
+    private void updateOwnersForChildren(Admins to, Map<Integer, Integer> ownerRelation) {
+        to.addOwner(ownerRelation);
+        for (Admins i : to.getDelegateTo()) {
+            updateOwnersForChildren(i, ownerRelation);
         }
     }
 
@@ -128,6 +159,10 @@ public class Table {
 
                 toOwner.setIsOwner(true);
                 uidAdminMap.put(to, toOwner);
+
+                toOwner.addOwner(fromOwner.getOwnerRelation());
+
+                changeAllOwners(from, to);
                 if (fromOwner.getDelegatedBy() <= 0) {
                     uidAdminMap.remove(from);
                 }else{
@@ -141,6 +176,14 @@ public class Table {
         } else {
             return StatusCode.NOT_AN_ADMIN;
         }
+    }
+
+    private void changeAllOwners(Integer from, Integer to) {
+        for (Admins admin : uidAdminMap.values()) {
+            admin.replaceOwner(from, to);
+        }
+        owners.remove(from);
+        owners.add(to);
     }
 
     private void transferPreviousDelegations(List<Admins> delegateTo, Admins toOwner) {
@@ -160,6 +203,7 @@ public class Table {
             sb.append(admins);
             sb.append("\n");
         }
+        sb.append("Owners: ").append(owners);
         return sb.toString();
     }
 
