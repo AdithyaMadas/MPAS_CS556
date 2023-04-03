@@ -33,7 +33,11 @@ public class Admins {
     }
 
     public void addOwner(Integer owner) {
-        ownerRelation.put(owner, 1);
+        if (ownerRelation.containsKey(owner)) {
+            ownerRelation.put(owner, ownerRelation.get(owner) + 1);
+        } else {
+            ownerRelation.put(owner, 1);
+        }
     }
 
     public void removeOwner(Map<Integer, Integer> owners) {
@@ -123,5 +127,18 @@ public class Admins {
                 ", isOwner=" + isOwner +
                 ", ownerRelation=" + ownerRelation +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Admins admins = (Admins) o;
+        return uid.equals(admins.uid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uid);
     }
 }

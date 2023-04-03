@@ -50,15 +50,30 @@ public class Table {
             Admins fromAdmin = uidAdminMap.get(from);
             Admins toAdmin = uidAdminMap.getOrDefault(to, new Admins(to));
             uidAdminMap.put(to, toAdmin);
+            if (fromAdmin.containsDelegate(toAdmin)) {
+                return StatusCode.SUCCESS;
+            }
+            if (createsCycle(toAdmin, fromAdmin)) {
+                return StatusCode.CREATES_CYCLE;
+            }
             fromAdmin.addToDelegates(toAdmin);
             updateOwnersForChildren(toAdmin, fromAdmin.getOwnerRelation());
-            for (int owner : fromAdmin.getOwnerList()) {
-                toAdmin.addOwner(owner);
-            }
             return StatusCode.SUCCESS;
         } else {
             return StatusCode.NOT_AN_ADMIN;
         }
+    }
+
+    private boolean createsCycle(Admins toAdmin, Admins from) {
+        if (toAdmin.containsDelegate(from)) {
+            return true;
+        }
+        for (Admins i : toAdmin.getDelegateTo()) {
+            if (createsCycle(i, from)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public StatusCode removeDelegation(Integer from, Integer to) {
@@ -67,8 +82,8 @@ public class Table {
                 Admins fromAdmin = uidAdminMap.get(from);
                 Admins toAdmin = uidAdminMap.get(to);
                 if (fromAdmin.containsDelegate(toAdmin)) {
-                    removeDelegation(toAdmin, fromAdmin.getOwnerRelation());
                     fromAdmin.removeDelegate(toAdmin);
+                    removeDelegation(toAdmin, fromAdmin.getOwnerRelation());
 //                    for (Admins delegates : toAdmin.getDelegateTo()) {
 ////                        if (!toAdmin.getIsOwner()) {
 //                            removeDelegation(toAdmin.getUid(), delegates.getUid());

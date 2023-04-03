@@ -11,7 +11,8 @@ public enum StatusCode {
 
     NO_ONE_ASSIGNED_OWNERSHIP(105, "No one assigned ownership!"),
 
-    TRYING_TO_DELEGATE_ITSELF(106, "User trying to delegate themselves")
+    TRYING_TO_DELEGATE_ITSELF(106, "User trying to delegate themselves"),
+    CREATES_CYCLE(107, "Creates a cyclic dependency"),
     ;
 
     private final int code;
