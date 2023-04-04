@@ -9,6 +9,8 @@ public class CreateTableRequest {
 
     boolean isOwnershipReq;
 
+    Integer quorumSize;
+
     public boolean isOwnershipReq() {
         return isOwnershipReq;
     }
@@ -27,6 +29,14 @@ public class CreateTableRequest {
 
     public List<Integer> getOwners() {
         return owners;
+    }
+
+    public Integer getQuorumSize() {
+        return quorumSize;
+    }
+
+    public void setQuorumSize(Integer quorumSize) {
+        this.quorumSize = quorumSize;
     }
 
     public void setOwners(List<Integer> owners) {

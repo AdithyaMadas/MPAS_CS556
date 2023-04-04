@@ -1,6 +1,8 @@
 package com.madas.cs556.controller;
 
 import com.madas.cs556.entity.Person;
+import com.madas.cs556.model.AccessRequest;
+import com.madas.cs556.model.AccessRequestPOJO;
 import com.madas.cs556.model.AuthorizationRequest;
 import com.madas.cs556.model.CreateTableRequest;
 import com.madas.cs556.repository.PersonRepository;
@@ -27,7 +29,7 @@ public class MainController {
 
     @PostMapping(path = "/createTable")
     public @ResponseBody String createTable(@RequestBody CreateTableRequest createTableRequest) {
-        service.createTable(createTableRequest.getTableName(), createTableRequest.getOwners(), createTableRequest.isOwnershipReq());
+        service.createTable(createTableRequest.getTableName(), createTableRequest.getOwners(), createTableRequest.isOwnershipReq(), createTableRequest.getQuorumSize());
         return "Success!";
     }
 
@@ -40,6 +42,10 @@ public class MainController {
     @GetMapping(path = "/printAuthorization/{tableName}")
     public @ResponseBody String printAuthorizationForTable(@PathVariable String tableName) {
         return service.printAdmins(tableName);
+    }
+    @GetMapping(path = "/printAccess/{tableName}")
+    public @ResponseBody String printAccessForTable(@PathVariable String tableName) {
+        return service.printAccess(tableName);
     }
 
     @PostMapping(path = "/transferOwnershipRecursive")
@@ -60,6 +66,38 @@ public class MainController {
     @PostMapping(path = "/removeDelegation")
     public @ResponseBody String removeDelegation(@RequestBody AuthorizationRequest request) {
         return service.removeDelegation(request.tableName, request.from, request.to);
+    }
+
+    @PostMapping(path = "/giveAccess")
+    public @ResponseBody String giveAccess(@RequestBody AccessRequestPOJO accessRequestPOJO) {
+        AccessRequest accessRequest = new AccessRequest(accessRequestPOJO.getFrom(), accessRequestPOJO.getTo(), accessRequestPOJO.getModes());
+        return service.giveAccess(accessRequestPOJO.getTableName(), accessRequest);
+    }
+    @PostMapping(path = "/revokeAccess")
+    public @ResponseBody String revokeAccess(@RequestBody AccessRequestPOJO accessRequestPOJO) {
+        AccessRequest accessRequest = new AccessRequest(accessRequestPOJO.getFrom(), accessRequestPOJO.getTo(), accessRequestPOJO.getModes());
+        return service.revokeAccess(accessRequestPOJO.getTableName(), accessRequest);
+    }
+
+    @GetMapping(path = "/readAccess/{table}/{uid}")
+    public @ResponseBody boolean doesUserHaveReadAccess(@PathVariable String table, @PathVariable Integer uid) {
+        return service.doesUserHaveSelectAccess(table, uid);
+    }
+    @GetMapping(path = "/insertAccess/{table}/{uid}")
+    public @ResponseBody boolean doesUserHaveInsertAccess(@PathVariable String table, @PathVariable Integer uid) {
+        return service.doesUserHaveInsertAccess(table, uid);
+    }
+    @GetMapping(path = "/deleteAccess/{table}/{uid}")
+    public @ResponseBody boolean doesUserHaveDeleteAccess(@PathVariable String table, @PathVariable Integer uid) {
+        return service.doesUserHaveDeleteAccess(table, uid);
+    }
+    @GetMapping(path = "/updateAccess/{table}/{uid}")
+    public @ResponseBody boolean doesUserHaveUpdateAccess(@PathVariable String table, @PathVariable Integer uid) {
+        return service.doesUserHaveUpdateAccess(table, uid);
+    }
+    @GetMapping(path = "/dropAccess/{table}/{uid}")
+    public @ResponseBody boolean doesUserHaveDropAccess(@PathVariable String table, @PathVariable Integer uid) {
+        return service.doesUserHaveDropAccess(table, uid);
     }
 
     @GetMapping(path = "/acceptOwnership/{table}/{to}")
@@ -88,6 +126,13 @@ public class MainController {
         request.setOwners(arrayList);
         request.setTableName("madas");
         request.setOwnershipReq(true);
+        request.setQuorumSize(2);
+        return request;
+    }
+    @GetMapping(path = "/test3")
+    @ResponseBody
+    public AccessRequestPOJO accessRequest() {
+        AccessRequestPOJO request = new AccessRequestPOJO("madas", 1, 2, "sidur");
         return request;
     }
 

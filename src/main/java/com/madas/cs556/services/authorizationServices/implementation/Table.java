@@ -1,5 +1,7 @@
 package com.madas.cs556.services.authorizationServices.implementation;
 
+import com.madas.cs556.model.AccessControl;
+import com.madas.cs556.model.AccessRequest;
 import com.madas.cs556.services.authorizationServices.constants.StatusCode;
 import com.madas.cs556.services.authorizationServices.constants.TransferMode;
 import com.madas.cs556.services.authorizationServices.model.Admins;
@@ -17,15 +19,20 @@ public class Table {
     Logger logger = LoggerFactory.getLogger(Table.class);
 
     String tableName;
-//    Set<Admins> adminDelegations;
 
     Map<Integer, Admins> uidAdminMap;
     Map<Integer, List<TransferRequest>> stillToAcceptOwnership;
 
     Set<Integer> owners;
 
+    Map<Integer, AccessControl> accessControlMap;
+
     public boolean isOwnershipAcceptanceReq;
-    public Table(String name, List<Integer> owners, boolean isOwnershipAcceptanceReq) {
+
+    int quorumSize;
+
+    public Table(String name, List<Integer> owners, boolean isOwnershipAcceptanceReq, Integer quorum) {
+
         this.tableName = name;
 //        adminDelegations = new HashSet<>();
         uidAdminMap = new HashMap<>();
@@ -40,6 +47,8 @@ public class Table {
         }
         this.stillToAcceptOwnership = new HashMap<>();
         this.isOwnershipAcceptanceReq = isOwnershipAcceptanceReq;
+        accessControlMap = new HashMap<>();
+        this.quorumSize = quorum;
     }
 
     public StatusCode delegateFromTo(Integer from, Integer to) {
@@ -84,15 +93,6 @@ public class Table {
                 if (fromAdmin.containsDelegate(toAdmin)) {
                     fromAdmin.removeDelegate(toAdmin);
                     removeDelegation(toAdmin, fromAdmin.getOwnerRelation());
-//                    for (Admins delegates : toAdmin.getDelegateTo()) {
-////                        if (!toAdmin.getIsOwner()) {
-//                            removeDelegation(toAdmin.getUid(), delegates.getUid());
-////                        }
-//                    }
-//                    if (toAdmin.getDelegatedBy() <= 0 && !toAdmin.getIsOwner()) {
-//                        logger.info("User " + to + " is not an admin anymore");
-//                        uidAdminMap.remove(to);
-//                    }
                     return StatusCode.SUCCESS;
                 } else {
                     return StatusCode.DELEGATION_NOT_PROVIDED_BEFORE;
@@ -106,6 +106,14 @@ public class Table {
     }
 
     private void removeDelegation(Admins to, Map<Integer, Integer> ownerRelation) {
+        for (AccessRequest request : to.getListOfAccessGiven()) {
+            AccessControl accessControl = accessControlMap.get(request.getTo());
+            accessControl.removeAccess(request, to.getOwnerRelation());
+
+            if (!accessControl.containsPermissions()) {
+                accessControlMap.remove(request.getTo());
+            }
+        }
         for (Admins i : to.getDelegateTo()) {
             removeDelegation(i, ownerRelation);
         }
@@ -117,9 +125,15 @@ public class Table {
     }
 
     private void updateOwnersForChildren(Admins to, Map<Integer, Integer> ownerRelation) {
+        for (AccessRequest request : to.getListOfAccessGiven()) {
+            accessControlMap.get(request.getTo()).removeAccess(request, to.getOwnerRelation());
+        }
         to.addOwner(ownerRelation);
         for (Admins i : to.getDelegateTo()) {
             updateOwnersForChildren(i, ownerRelation);
+        }
+        for (AccessRequest request : to.getListOfAccessGiven()) {
+            accessControlMap.get(request.getTo()).addToAccessControl(request, to.getOwnerRelation());
         }
     }
 
@@ -197,6 +211,9 @@ public class Table {
         for (Admins admin : uidAdminMap.values()) {
             admin.replaceOwner(from, to);
         }
+        for (AccessControl accessControl : accessControlMap.values()) {
+            accessControl.updateOwner(from, to);
+        }
         owners.remove(from);
         owners.add(to);
     }
@@ -211,6 +228,98 @@ public class Table {
         }
     }
 
+    public StatusCode giveAccess(AccessRequest request) {
+        if (uidAdminMap.containsKey(request.getFrom())) {
+            Admins fromAdmin = uidAdminMap.get(request.getFrom());
+            AccessControl accessControl = accessControlMap.getOrDefault(request.getTo(), new AccessControl());
+            if (fromAdmin.alreadyInAccessList(request.getTo())) {
+                accessControl.removeAccess(fromAdmin.getAccessRequestsGiven().get(request.getTo()), fromAdmin.getOwnerRelation());
+            }
+            fromAdmin.addToAccessList(request);
+            accessControl.addToAccessControl(request, fromAdmin.getOwnerRelation());
+            this.accessControlMap.put(request.getTo(), accessControl);
+            return StatusCode.SUCCESS;
+        } else {
+            return StatusCode.NOT_AN_ADMIN;
+        }
+    }
+
+    public StatusCode revokeAccess(AccessRequest request) {
+        if (uidAdminMap.containsKey(request.getFrom())) {
+            Admins fromAdmin = uidAdminMap.get(request.getFrom());
+            if (!accessControlMap.containsKey(request.getTo())) {
+                return StatusCode.ACCESS_NOT_GIVEN_BEFORE;
+            }
+            if (!fromAdmin.getAccessRequestsGiven().containsKey(request.getTo())) {
+                return StatusCode.ACCESS_NOT_GIVEN_BEFORE;
+            }
+
+            AccessControl accessControl = accessControlMap.get(request.getTo());
+            accessControl.removeAccess(fromAdmin.getAccessRequestsGiven().get(request.getTo()), fromAdmin.getOwnerRelation());
+            if (!accessControl.containsPermissions()) {
+                accessControlMap.remove(request.getTo());
+            }
+            fromAdmin.removeFromAccessList(request);
+            return StatusCode.SUCCESS;
+        } else {
+            return StatusCode.NOT_AN_ADMIN;
+        }
+    }
+
+    public boolean doesUserHaveSelectAccess(Integer uid) {
+        if (uidAdminMap.containsKey(uid)) {
+            return true;
+        } else if (accessControlMap.containsKey(uid)) {
+            AccessControl accessControl = accessControlMap.get(uid);
+            return accessControl.selectOwnerSize() >= quorumSize;
+        } else {
+            return false;
+        }
+    }
+    public boolean doesUserHaveInsertAccess(Integer uid) {
+        if (uidAdminMap.containsKey(uid)) {
+            return true;
+        } else if (accessControlMap.containsKey(uid)) {
+            AccessControl accessControl = accessControlMap.get(uid);
+            return accessControl.selectOwnerSize() >= quorumSize;
+        } else {
+            return false;
+        }
+    }
+    public boolean doesUserHaveDeleteAccess(Integer uid) {
+        if (uidAdminMap.containsKey(uid)) {
+            return true;
+        } else if (accessControlMap.containsKey(uid)) {
+            AccessControl accessControl = accessControlMap.get(uid);
+            return accessControl.selectOwnerSize() >= quorumSize;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean doesUserHaveUpdateAccess(Integer uid) {
+        if (uidAdminMap.containsKey(uid)) {
+            return true;
+        } else if (accessControlMap.containsKey(uid)) {
+            AccessControl accessControl = accessControlMap.get(uid);
+            return accessControl.selectOwnerSize() >= quorumSize;
+        } else {
+            return false;
+        }
+    }
+    public boolean doesUserHaveDropAccess(Integer uid) {
+        if (uidAdminMap.containsKey(uid)) {
+            return true;
+        } else if (accessControlMap.containsKey(uid)) {
+            AccessControl accessControl = accessControlMap.get(uid);
+            return accessControl.selectOwnerSize() >= quorumSize;
+        } else {
+            return false;
+        }
+    }
+
+
+
     public String printAdmins() {
         StringBuilder sb = new StringBuilder();
         for (Admins admins : uidAdminMap.values()) {
@@ -222,8 +331,11 @@ public class Table {
         return sb.toString();
     }
 
+    public String printAccess() {
+        return accessControlMap.toString();
+    }
+
     public String printAcceptance() {
         return stillToAcceptOwnership.toString();
     }
-
 }

@@ -1,5 +1,7 @@
 package com.madas.cs556.services.authorizationServices.model;
 
+import com.madas.cs556.model.AccessRequest;
+
 import java.util.*;
 
 public class Admins {
@@ -12,16 +14,40 @@ public class Admins {
 
     Map<Integer, Integer> ownerRelation;
 
+    Map<Integer, AccessRequest> accessRequestsGiven;
+
 
     public Admins(int i) {
         uid = i;
         delegateTo = new HashSet<>();
         delegatedBy = 0;
         ownerRelation = new HashMap<>();
+        accessRequestsGiven = new HashMap<>();
+    }
+
+    public List<AccessRequest> getListOfAccessGiven() {
+        return new ArrayList<>(accessRequestsGiven.values());
     }
 
     public Map<Integer, Integer> getOwnerRelation() {
         return ownerRelation;
+    }
+
+    public boolean alreadyInAccessList(Integer to) {
+        return accessRequestsGiven.containsKey(to);
+    }
+
+    public void addToAccessList(AccessRequest request) {
+        this.accessRequestsGiven.put(request.getTo(), request);
+    }
+
+
+    public void removeFromAccessList(AccessRequest request) {
+        this.accessRequestsGiven.remove(request.getTo());
+    }
+
+    public Map<Integer, AccessRequest> getAccessRequestsGiven() {
+        return accessRequestsGiven;
     }
 
     public void addOwner(Map<Integer, Integer> owners) {
@@ -52,6 +78,7 @@ public class Admins {
         }
     }
 
+    //todo: test this logic, should it add to existing count? in case it is transferred from an owner to another
     public void replaceOwner(Integer from, Integer to) {
         Integer ownerCount = this.ownerRelation.get(from);
         if (ownerCount == null) {

@@ -13,6 +13,7 @@ public enum StatusCode {
 
     TRYING_TO_DELEGATE_ITSELF(106, "User trying to delegate themselves"),
     CREATES_CYCLE(107, "Creates a cyclic dependency"),
+    ACCESS_NOT_GIVEN_BEFORE(107, "Access not given before"),
     ;
 
     private final int code;
