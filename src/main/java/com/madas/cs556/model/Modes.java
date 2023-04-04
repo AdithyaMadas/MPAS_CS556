@@ -1,5 +1,7 @@
 package com.madas.cs556.model;
 
+import java.util.Arrays;
+
 public class Modes {
     private final boolean[] accessIndex;
 
@@ -22,5 +24,29 @@ public class Modes {
 
     public boolean[] getAccessIndex() {
         return accessIndex;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (accessIndex[0]) {
+            sb.append("S");
+        }
+        if (accessIndex[1]) {
+            sb.append("I");
+        }
+        if (accessIndex[2]) {
+            sb.append("D");
+        }
+        if (accessIndex[3]) {
+            sb.append("U");
+        }
+        if (accessIndex[4]) {
+            sb.append("R");
+        }
+
+        return "Modes{" +
+                "accessIndex=" + sb +
+                '}';
     }
 }

@@ -30,4 +30,13 @@ public class AccessRequest {
     public Modes getModes() {
         return modes;
     }
+
+    @Override
+    public String toString() {
+        return "AccessRequest{" +
+                "from=" + from +
+                ", to=" + to +
+                ", modes=" + modes +
+                '}';
+    }
 }

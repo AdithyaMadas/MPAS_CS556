@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 public class MainController {
@@ -79,7 +78,7 @@ public class MainController {
         return service.revokeAccess(accessRequestPOJO.getTableName(), accessRequest);
     }
 
-    @GetMapping(path = "/readAccess/{table}/{uid}")
+    @GetMapping(path = "/selectAccess/{table}/{uid}")
     public @ResponseBody boolean doesUserHaveReadAccess(@PathVariable String table, @PathVariable Integer uid) {
         return service.doesUserHaveSelectAccess(table, uid);
     }

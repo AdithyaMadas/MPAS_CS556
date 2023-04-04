@@ -43,7 +43,18 @@ public class Admins {
 
 
     public void removeFromAccessList(AccessRequest request) {
-        this.accessRequestsGiven.remove(request.getTo());
+        AccessRequest req = this.getAccessRequestsGiven().get(request.getTo());
+        for (int i = 0; i < 5; i++) {
+            if (request.getModes().getAccessIndex()[i]) {
+                req.getModes().getAccessIndex()[i] = false;
+            }
+        }
+        for (int i = 0; i < 5; i++) {
+            if (req.getModes().getAccessIndex()[i]) {
+                return;
+            }
+        }
+        this.getAccessRequestsGiven().remove(request.getTo());
     }
 
     public Map<Integer, AccessRequest> getAccessRequestsGiven() {
@@ -153,6 +164,7 @@ public class Admins {
                 "], delegatedBy=" + delegatedBy +
                 ", isOwner=" + isOwner +
                 ", ownerRelation=" + ownerRelation +
+                ", accessRequestsGiven=" + accessRequestsGiven +
                 '}';
     }
 
@@ -167,5 +179,19 @@ public class Admins {
     @Override
     public int hashCode() {
         return Objects.hash(uid);
+    }
+
+    public boolean containsAccessRequest(AccessRequest request) {
+        if (accessRequestsGiven.containsKey(request.getTo())) {
+            AccessRequest accessRequest = accessRequestsGiven.get(request.getTo());
+            for (int i = 0; i < 5; i++) {
+                if (request.getModes().getAccessIndex()[i] && !accessRequest.getModes().getAccessIndex()[i]) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
     }
 }

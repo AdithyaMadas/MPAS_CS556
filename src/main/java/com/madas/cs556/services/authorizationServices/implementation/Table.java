@@ -121,6 +121,10 @@ public class Table {
         if (to.getOwnerRelation().size() == 0) {
             logger.info("User " + to + " is not an admin anymore");
             uidAdminMap.remove(to.getUid());
+        } else {
+            for (AccessRequest request : to.getListOfAccessGiven()) {
+                giveAccess(request);
+            }
         }
     }
 
@@ -250,12 +254,12 @@ public class Table {
             if (!accessControlMap.containsKey(request.getTo())) {
                 return StatusCode.ACCESS_NOT_GIVEN_BEFORE;
             }
-            if (!fromAdmin.getAccessRequestsGiven().containsKey(request.getTo())) {
+            if (!fromAdmin.containsAccessRequest(request)) {
                 return StatusCode.ACCESS_NOT_GIVEN_BEFORE;
             }
 
             AccessControl accessControl = accessControlMap.get(request.getTo());
-            accessControl.removeAccess(fromAdmin.getAccessRequestsGiven().get(request.getTo()), fromAdmin.getOwnerRelation());
+            accessControl.removeAccess(request, fromAdmin.getOwnerRelation());
             if (!accessControl.containsPermissions()) {
                 accessControlMap.remove(request.getTo());
             }
@@ -281,7 +285,7 @@ public class Table {
             return true;
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
-            return accessControl.selectOwnerSize() >= quorumSize;
+            return accessControl.insertOwnerSize() >= quorumSize;
         } else {
             return false;
         }
@@ -291,7 +295,7 @@ public class Table {
             return true;
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
-            return accessControl.selectOwnerSize() >= quorumSize;
+            return accessControl.deleteOwnerSize() >= quorumSize;
         } else {
             return false;
         }
@@ -302,7 +306,7 @@ public class Table {
             return true;
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
-            return accessControl.selectOwnerSize() >= quorumSize;
+            return accessControl.updateOwnerSize() >= quorumSize;
         } else {
             return false;
         }
@@ -312,7 +316,7 @@ public class Table {
             return true;
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
-            return accessControl.selectOwnerSize() >= quorumSize;
+            return accessControl.dropOwnerSize() >= quorumSize;
         } else {
             return false;
         }

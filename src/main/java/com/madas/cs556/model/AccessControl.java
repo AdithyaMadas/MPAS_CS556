@@ -31,11 +31,11 @@ public class AccessControl {
             if (request.getModes().getAccessIndex()[i]) {
                 Map<Integer, Integer> ownerMap = accessMap[i];
                 for (Map.Entry<Integer, Integer> entry : ownerRelation.entrySet()) {
-                    int newCount = ownerMap.get(entry.getKey()) - entry.getValue();
-                    if (newCount == 0) {
+                    int newCount = ownerMap.getOrDefault(entry.getKey(), 0) - entry.getValue();
+                    if (newCount <= 0) {
                         ownerMap.remove(entry.getKey());
                     } else {
-                        ownerMap.remove(entry.getKey());
+                        ownerMap.put(entry.getKey(), newCount);
                     }
                 }
             }
@@ -58,7 +58,7 @@ public class AccessControl {
         return accessMap[4].size();
     }
     public boolean containsPermissions() {
-        return selectOwnerSize() != 0 && insertOwnerSize() != 0 && deleteOwnerSize() != 0 && updateOwnerSize() != 0 && dropOwnerSize() != 0;
+        return selectOwnerSize() != 0 || insertOwnerSize() != 0 || deleteOwnerSize() != 0 || updateOwnerSize() != 0 || dropOwnerSize() != 0;
     }
 
     @Override
