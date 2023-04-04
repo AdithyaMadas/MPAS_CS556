@@ -98,7 +98,21 @@ public class MainController {
     public @ResponseBody boolean doesUserHaveDropAccess(@PathVariable String table, @PathVariable Integer uid) {
         return service.doesUserHaveDropAccess(table, uid);
     }
+    @GetMapping(path = "/createDBA/{uid}")
+    public @ResponseBody String createDBAUser(@PathVariable Integer uid) {
+        return service.createDBAUser(uid).toString();
+    }
 
+
+    @PostMapping(path = "/giveAccessDBA")
+    public @ResponseBody String giveAccessDBA(@RequestBody AccessRequestPOJO accessRequestPOJO) {
+        return service.provideAccessToTable(accessRequestPOJO.getTableName(), accessRequestPOJO.getFrom(), accessRequestPOJO.getTo(), accessRequestPOJO.getModes()).getDescription();
+    }
+
+    @PostMapping(path = "/revokeAccessDBA")
+    public @ResponseBody String revokeAccessDBA(@RequestBody AccessRequestPOJO accessRequestPOJO) {
+        return service.revokeAccessToTable(accessRequestPOJO.getTableName(), accessRequestPOJO.getFrom(), accessRequestPOJO.getTo(), accessRequestPOJO.getModes()).getDescription();
+    }
     @GetMapping(path = "/acceptOwnership/{table}/{to}")
     public @ResponseBody String acceptOwnership(@PathVariable("table") String tableName, @PathVariable("to") Integer to) {
         return service.acceptOwnership(tableName, to);

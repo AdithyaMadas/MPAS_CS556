@@ -13,7 +13,9 @@ public enum StatusCode {
 
     TRYING_TO_DELEGATE_ITSELF(106, "User trying to delegate themselves"),
     CREATES_CYCLE(107, "Creates a cyclic dependency"),
-    ACCESS_NOT_GIVEN_BEFORE(107, "Access not given before"),
+    ACCESS_NOT_GIVEN_BEFORE(108, "Access not given before"),
+    TABLE_DOES_NOT_EXIST(109, "Table does not exist"),
+    NOT_AN_DBA(110, "AdminID is not a DBA"),
     ;
 
     private final int code;

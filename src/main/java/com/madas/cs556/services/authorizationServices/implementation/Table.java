@@ -2,6 +2,7 @@ package com.madas.cs556.services.authorizationServices.implementation;
 
 import com.madas.cs556.model.AccessControl;
 import com.madas.cs556.model.AccessRequest;
+import com.madas.cs556.model.Modes;
 import com.madas.cs556.services.authorizationServices.constants.StatusCode;
 import com.madas.cs556.services.authorizationServices.constants.TransferMode;
 import com.madas.cs556.services.authorizationServices.model.Admins;
@@ -27,6 +28,8 @@ public class Table {
 
     Map<Integer, AccessControl> accessControlMap;
 
+    Map<Integer, Modes> adminAccess;
+
     public boolean isOwnershipAcceptanceReq;
 
     int quorumSize;
@@ -49,6 +52,7 @@ public class Table {
         this.isOwnershipAcceptanceReq = isOwnershipAcceptanceReq;
         accessControlMap = new HashMap<>();
         this.quorumSize = quorum;
+        adminAccess = new HashMap<>();
     }
 
     public StatusCode delegateFromTo(Integer from, Integer to) {
@@ -276,6 +280,8 @@ public class Table {
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
             return accessControl.selectOwnerSize() >= quorumSize;
+        } else if (adminAccess.containsKey(uid)) {
+            return adminAccess.get(uid).getAccessIndex()[0];
         } else {
             return false;
         }
@@ -286,6 +292,8 @@ public class Table {
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
             return accessControl.insertOwnerSize() >= quorumSize;
+        } else if (adminAccess.containsKey(uid)) {
+            return adminAccess.get(uid).getAccessIndex()[1];
         } else {
             return false;
         }
@@ -296,6 +304,8 @@ public class Table {
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
             return accessControl.deleteOwnerSize() >= quorumSize;
+        } else if (adminAccess.containsKey(uid)) {
+            return adminAccess.get(uid).getAccessIndex()[2];
         } else {
             return false;
         }
@@ -307,6 +317,8 @@ public class Table {
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
             return accessControl.updateOwnerSize() >= quorumSize;
+        } else if (adminAccess.containsKey(uid)) {
+            return adminAccess.get(uid).getAccessIndex()[3];
         } else {
             return false;
         }
@@ -317,6 +329,8 @@ public class Table {
         } else if (accessControlMap.containsKey(uid)) {
             AccessControl accessControl = accessControlMap.get(uid);
             return accessControl.dropOwnerSize() >= quorumSize;
+        } else if (adminAccess.containsKey(uid)) {
+            return adminAccess.get(uid).getAccessIndex()[4];
         } else {
             return false;
         }
@@ -342,4 +356,36 @@ public class Table {
     public String printAcceptance() {
         return stillToAcceptOwnership.toString();
     }
+
+    public StatusCode provideAccessFromAdmin(Integer userId, Modes modes) {
+        Modes access = adminAccess.getOrDefault(userId, new Modes(""));
+        for (int i = 0; i < 5; i++) {
+            if (modes.getAccessIndex()[i]) {
+                access.getAccessIndex()[i] = true;
+            }
+        }
+        adminAccess.put(userId, access);
+        return StatusCode.SUCCESS;
+    }
+
+    public StatusCode revokeAccessFromTable(Integer userId, Modes modes) {
+        Modes access = adminAccess.getOrDefault(userId, new Modes(""));
+        for (int i = 0; i < 5; i++) {
+            if (modes.getAccessIndex()[i]) {
+                access.getAccessIndex()[i] = false;
+            }
+        }
+        for (int i = 0; i < 5; i++) {
+            if (access.getAccessIndex()[i]) {
+                adminAccess.put(userId, access);
+                return StatusCode.SUCCESS;
+            }
+        }
+        if (adminAccess.containsKey(userId)) {
+            adminAccess.remove(userId);
+        }
+        return StatusCode.SUCCESS;
+    }
+
+
 }
